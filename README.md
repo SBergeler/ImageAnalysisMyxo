@@ -1,6 +1,8 @@
 # ImageAnalysisMyxo
 
-This repository contains custom scripts for the analyses presented in the paper "PomX, a ParA/MinD ATPase activating protein, is a triple regulator of cell division in *Myxococcus xanthus*" by Dominik Schumacher, Andrea Harms, Silke Bergeler, Erwin Frey and Lotte Søgaard-Andersen (https://www.biorxiv.org/content/10.1101/2020.12.14.422651v1). 
+"PomX, a ParA/MinD ATPase activating protein, is a triple regulator of cell division in *Myxococcus xanthus*" by Dominik Schumacher, Andrea Harms, Silke Bergeler, Erwin Frey and Lotte Søgaard-Andersen (https://www.biorxiv.org/content/10.1101/2020.12.14.422651v1)
+
+This repository contains custom scripts for the analyses presented in the paper above. 
 
 The scripts automatically analyze *Myxococcus xanthus* cells and fluorescently labelled protein foci within the cells. It builds on the software Oufti (http://www.oufti.org) from the Jacobs-Wagner lab. Note that the scripts were written specifically for the analyses in the paper above. The scripts have only been tested on the specific images used in the above publication on a Mac with Matlab 2020b and on Windows with MatLab 2020b. You may use and modify the scripts at your own risk. 
 
@@ -35,6 +37,11 @@ Note: this analysis is still work in progress.
 
 # Visualization
 The analysis results are visualized and saved in tables that are suitable for further analysis and visualization e.g. in Excel. 
+
+# References
+* Ahmad Paintdakhi, Bradley Parry, Manuel Campos, Irnov Irnov, Johan Elf, Ivan Surovtsev, and Christine Jacobs-Wagner (2016). Oufti: an integrated software package for high-accuracy, high-throughput quantitative microscopy analysis, Molecular Microbiology 99(4), 767-777
+
+* Douglas Schwarz (2021). sort_nat: Natural Order Sort (https://www.mathworks.com/matlabcentral/fileexchange/10959-sort_nat-natural-order-sort), MATLAB Central File Exchange. Retrieved March 9, 2021.
 
 
 
