@@ -129,4 +129,7 @@ elseif ~timelapse % SNAPSHOTS
     % the last parameter is the percentage of pixels in the demograph which are
     % plotted with highest intensity value
     PlotDemograph(mat_paths, fluor_paths, save_path, xshift, yshift, pixelsize, 500, 3)
+
+    % plot normalized intensity profiles
+    PlotIntensityProfiles(mat_paths, fluor_paths, save_path, xshift, yshift, pixelsize)
 end
