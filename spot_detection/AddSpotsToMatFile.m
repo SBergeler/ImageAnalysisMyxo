@@ -1,4 +1,5 @@
-function [ ] = AddSpotsToMatFile(mat_path, fluor_paths, xshift, yshift, threshold_value, method, npixel, timelapse, division)
+function [ ] = AddSpotsToMatFile(mat_path,fluor_paths,xshift,yshift,threshold_value,method,npixel,...
+    timelapse,division,fraction_peak_height_included)
 % ADDSPOTSTOMATFILE: This function determines spots inside cells using
 % SpotDetection2D and adds the spots as spots_matlab to the mat file
 %
@@ -48,7 +49,7 @@ for nframe = 1:min(nfluoim,ntframes)
     meshs = cell(ntcells,1); % store the meshes of the cells in this frame (shift corrected)
     for ncell = 1:ntcells
         count = count + 1;
-        if count == 1
+        if count == 5
             show_debug_plots = false;
         end
         this_cell = masks.cellList.meshData{1,nframe}{1,ncell};
@@ -61,7 +62,7 @@ for nframe = 1:min(nfluoim,ntframes)
         [binary_image_spots, spot_positions, spot_major_axis, ...
             spot_minor_axis, spot_ecc, spot_area, spot_orient, spot_boundary, PixelIdxList, ...
             signal_int, rel_signal_int, threshold_spot, background, cell_signal_int] ...
-            = SpotDetection2D(image_fluor,background_fluor,this_cell,threshold_value,method,npixel,show_debug_plots);
+            = SpotDetection2D(image_fluor,background_fluor,this_cell,threshold_value,method,npixel,show_debug_plots,fraction_peak_height_included);
         if length(spot_major_axis) > 1 % if more than one spot is detected
             cell_id = masks.cellList.cellId{nframe}(ncell);
             if timelapse && division && nframe > 1

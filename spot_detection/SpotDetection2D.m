@@ -1,6 +1,6 @@
 function [binary_image_spots, spot_positions, spot_major_axis, spot_minor_axis, ...
     spot_ecc, spot_area, spot_orient, spot_boundary, PixelIdxList, signal_int, rel_signal_int, threshold_spot, background, cell_signal_int] = ...
-    SpotDetection2D(image_fluor,background_fluor,this_cell,threshold_value,method,npixel,show_debug_plots)
+    SpotDetection2D(image_fluor,background_fluor,this_cell,threshold_value,method,npixel,show_debug_plots,fraction_peak_height_included)
 % SpotDetection2D: Detect spots in cells, which are defined by two
 % characteristics: 1) the signal intensity has to be above a certain
 % threshold (given by 'method' and 'threshold_value') and 2) spots have to
@@ -21,6 +21,8 @@ function [binary_image_spots, spot_positions, spot_major_axis, spot_minor_axis, 
 % - npixel: number of connected pixels to be called a spot
 % - show_debug_plots: Boolean (if true, show plots created in this script
 % for debugging)
+% - fraction_peak_height_included: determine the spot area by defining the spot area as 
+% fraction of the maximal value (smoothed) of the spots
 
 % OUTPUT:
 % - binary_image_spots: binary image with ones when the fluorescence signal
@@ -190,34 +192,44 @@ end
 cell_fluor_signal_notBGC = image_fluor.*uint16(binary_mask);
 binary_image_spots(cell_fluor_signal_notBGC > threshold_spot) = true;
 
-%% for debugging only
+%% Find spots by connectedness
 
-if (show_debug_plots)
-    figure;
-    subplot(2,2,1)
-    imshow(imadjust(image_fluor(box_ymin:box_ymax,box_xmin:box_xmax)))
-    title('fluorescence signal in cell (not BG corr.)')
-    
-    subplot(2,2,2)
-    imshow(binary_image_spots(box_ymin:box_ymax,box_xmin:box_xmax))
-    title('high intensity pixels')
-    
-    subplot(2,2,[3,4])
-    histogram(cell_fluor_signal_notBGC(binary_mask),100,'Normalization','pdf');
-    [N,~] = histcounts(cell_fluor_signal_notBGC(binary_mask),100,'Normalization','pdf');
-    hold on
-    line([threshold_spot threshold_spot], [0 max(N)*1.1],'Color','red','LineStyle','--');
-    hold on
-    line([mean_diffuse_notBGC mean_diffuse_notBGC], [0 max(N)*1.1],'Color','black','LineStyle','--');
-    title('diffuse intensity inside cell, not BGC (red: threshold, black: mean (ignoring 30% highest ints)')
-    ylabel('pdf')
-    xlabel('fluorescence intensity')
-    ylim([0 max(N)*1.1])
+% save all connected components with connectivity 4
+components_1 = bwconncomp(binary_image_spots,4);
+
+% consider only those with more than npixel
+comps_ids = cellfun(@(x) length(x) > npixel, components_1.PixelIdxList);
+components_1.PixelIdxList = components_1.PixelIdxList(comps_ids);
+components_1.NumObjects = length(components_1.PixelIdxList);
+
+thresh2_all = [];
+
+if fraction_peak_height_included < 1
+    cell_fluor_signal_notBGC_smoothed = imgaussfilt(cell_fluor_signal_notBGC);
+    for i = 1:components_1.NumObjects
+        [max_val,id_max] = max(cell_fluor_signal_notBGC_smoothed(components_1.PixelIdxList{i}));
+        thresh2 = mean_diffuse_notBGC + (double(max_val) - mean_diffuse_notBGC)*(1-fraction_peak_height_included); 
+        thresh2_all = [thresh2_all,thresh2];
+        %mean_diffuse_notBGC + (max_val - mean_diffuse_notBGC)/5;
+        binary_image_spots_new = logical(false(size(image_fluor,1),size(image_fluor,2))); 
+        binary_image_spots_new(cell_fluor_signal_notBGC > thresh2) = true;
+        components_new = bwconncomp(binary_image_spots_new,4);
+        % chose the connected component that contains the maximal value
+        select_comp = cellfun(@(x) ismember(components_1.PixelIdxList{i}(id_max),x),components_new.PixelIdxList);
+%         if max(cell_fluor_signal_notBGC(components_new.PixelIdxList{select_comp})) == max(cell_fluor_signal_notBGC(components_1.PixelIdxList{i}))
+%             components_1.PixelIdxList{i} = components_new.PixelIdxList{select_comp};
+%         else
+%             components_1.PixelIdxList{i} = [];
+%         end
+        components_1.PixelIdxList{i} = components_new.PixelIdxList{select_comp};
+        % [m,n] = size(cell_fluor_signal_notBGC);
+        % [X,Y] = meshgrid(1:n,1:m);
+        % data = [X(:) Y(:) cell_fluor_signal_notBGC(:)];
+        % data = data(data(:,3)>0,:);
+        % [fitresult, zfit, fiterr, zerr, resnorm, rr] = fmgaussfit(data(:,1),data(:,2),data(:,3));
+    end
 end
 
-%% Find spots by connectedness
-% save all connected components with connectivity 4
-components_1 = bwconncomp(binary_image_spots,4); 
 % get statistics of the spots (largest / smallest extension, area, ...) 
 stats = regionprops('table',components_1,'Area','Centroid',...
     'MajorAxisLength','MinorAxisLength','PixelIdxList','Eccentricity','Orientation', ...
@@ -227,7 +239,7 @@ if size(stats,2) == 1 % to correct for an error that occurred for one-pixel conn
     stats = splitvars(stats,'PixelIdxList','NewVariableNames',newnames);
     stats.Area = cell2mat(stats.Area);
 end
-stats = stats(stats.Area > npixel,:); % choose only the spots with at least 'npixel' pixels
+%stats = stats(stats.Area > npixel,:); % choose only the spots with at least 'npixel' pixels
 spot_positions = stats.Centroid;
 spot_major_axis = stats.MajorAxisLength;
 spot_minor_axis = stats.MinorAxisLength;
@@ -246,5 +258,47 @@ else
     signal_int = cellfun(@(x) sum(cell_fluor_signal(x)), stats.PixelIdxList);
     rel_signal_int = cellfun(@(x) sum(cell_fluor_signal(x)), stats.PixelIdxList)./cell_signal_int;
     spot_boundary = cellfun(@(x) bwboundaries(x,'noholes'),stats.Image,'UniformOutput',false); % row and column coordinates 
+end
+
+%% for debugging only
+
+if (show_debug_plots)
+    figure;
+    subplot(2,3,1)
+    imshow(imadjust(image_fluor(box_ymin:box_ymax,box_xmin:box_xmax)))
+    title('fluorescence signal in cell (not BG corr.)')
+    
+    subplot(2,3,2)
+    surf(image_fluor(box_ymin:box_ymax,box_xmin:box_xmax),'LineStyle','none')
+    hold on
+    surf(threshold_spot*ones(size(image_fluor(box_ymin:box_ymax,box_xmin:box_xmax))),...
+        'FaceColor','r','FaceAlpha',0.5,'LineStyle','none')
+    for i = 1:numel(thresh2_all)
+        hold on
+        surf(thresh2_all(i)*ones(size(image_fluor(box_ymin:box_ymax,box_xmin:box_xmax))),...
+            'FaceColor','b','FaceAlpha',0.5,'LineStyle','none')
+    end
+    %axis equal
+    title('fluorescence signal in cell (not BG corr.)')
+    
+    subplot(2,3,3)
+    imshow(binary_image_spots(box_ymin:box_ymax,box_xmin:box_xmax))
+    title('high intensity pixels')
+    
+    subplot(2,3,4:6)
+    histogram(cell_fluor_signal_notBGC(binary_mask),100,'Normalization','pdf');
+    set(gca,'xscale','log')
+    [N,~] = histcounts(cell_fluor_signal_notBGC(binary_mask),100,'Normalization','pdf');
+    hold on
+    line([threshold_spot threshold_spot], [0 max(N)*1.1],'Color','red','LineStyle','--');
+    for i = 1:numel(thresh2_all)
+        line([thresh2_all(i) thresh2_all(i)], [0 max(N)*1.1],'Color','blue','LineStyle','--');
+    end
+    hold on
+    line([mean_diffuse_notBGC mean_diffuse_notBGC], [0 max(N)*1.1],'Color','black','LineStyle','--');
+    title('diffuse intensity inside cell, not BGC (red: threshold, black: mean (ignoring 30% highest ints), blue: threshold for fraction)')
+    ylabel('pdf')
+    xlabel('fluorescence intensity')
+    ylim([0 max(N)*1.1])
 end
 end

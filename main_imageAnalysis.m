@@ -64,6 +64,12 @@ else
     npixel = 20;
 end
 
+% fraction of the signal intensity peak height defined as spot; in [0,1],
+% if set to 1 the spot is only defined by the above method for spot
+% detection, if e.g. 0.75, the threshold for the spot is at 25% of the peak 
+% height minus the mean diffuse signal
+fraction_peak_height_included = 1;
+
 %% Data preprocessing
 % get the name of the .mat file (if there is only one .mat file in the
 % folder); if a mat file with the ending '_tracked.mat' already exists delete the file
@@ -71,7 +77,11 @@ end
 disp('data preprocessing ...')
 
 % create folders for images and image stacks as required for further analysis
-MakeFileStructure(path)
+prompt = 'Are images already in folders and image stacks have been generated? Y\\N: ';
+checked = input(prompt,'s');
+if(checked == 'N')
+    MakeFileStructure(path)
+end
 
 mat_files = dir([path,'*.mat']);
 
@@ -250,7 +260,7 @@ disp('spot detection ...')
 
 % spot detection inside cells detected by Oufti (if ~division, the first
 % frame needs to have cell outlines and for those the spots are identified)
-AddSpotsToMatFile(mat_path, fluor_paths, xshift, yshift, threshold_value, method, npixel, timelapse, division)
+AddSpotsToMatFile(mat_path,fluor_paths,xshift,yshift,threshold_value,method,npixel,timelapse,division,fraction_peak_height_included)
 
 % calculate orientation of spot relative to cell orientation
 GetOrientationRelativeToCell(mat_path, xshift, yshift)

@@ -61,15 +61,15 @@ subplot(1,2,1)
 imshow(imadjust(previous_image_fluor_sel),'InitialMagnification','fit')
 hold on
 % plot cell surrounding
-plot(previous_cell.mesh(:,1)-topx_previous,previous_cell.mesh(:,2)-topy_previous,'Color','cyan','MarkerSize',10);
-plot(previous_cell.mesh(:,3)-topx_previous,previous_cell.mesh(:,4)-topy_previous,'Color','cyan','MarkerSize',10);
+plot(previous_cell.mesh(:,1)-topx_previous+1,previous_cell.mesh(:,2)-topy_previous+1,'Color','cyan','MarkerSize',10);
+plot(previous_cell.mesh(:,3)-topx_previous+1,previous_cell.mesh(:,4)-topy_previous+1,'Color','cyan','MarkerSize',10);
 hold on
 % plot spots
 str = cell(1,size(previous_spot_positions,1));
 
 p = zeros(1,size(previous_spot_positions,1));
 for i = 1:size(previous_spot_positions,1)
-    p(i) = plot(previous_spot_positions(i,1)-topx_previous,previous_spot_positions(i,2)-topy_previous,'x','Color',colors(i,:),'MarkerSize',10,'LineWidth',1.5);
+    p(i) = plot(previous_spot_positions(i,1)-topx_previous+1,previous_spot_positions(i,2)-topy_previous+1,'x','Color',colors(i,:),'MarkerSize',10,'LineWidth',1.5);
     %text(previous_spot_positions(i,1)-topx_previous+5,previous_spot_positions(i,2)-topy_previous,['Spot ID: ' num2str(i)],'Color','r','FontWeight','Bold','FontSize',14);
     %x = [30 previous_spot_positions(i,1)-topx_previous];
     %y = [40 previous_spot_positions(i,2)-topy_previous];
@@ -80,7 +80,7 @@ for i = 1:size(previous_spot_positions,1)
     [row,col] = ind2sub(size(previous_image_fluor),previous_PixelIdxList{i});
     bin_tmp = logical(false(size(previous_image_fluor_sel)));
     for j = 1:length(row)
-        bin_tmp(row(j)-topy_previous,col(j)-topx_previous) = true;
+        bin_tmp(row(j)-topy_previous+1,col(j)-topx_previous+1) = true;
     end
     B = bwboundaries(bin_tmp,'noholes');
     ps = plot(B{1}(:,2), B{1}(:,1),'Color',colors(i,:),'LineWidth', 1.5);
@@ -93,21 +93,21 @@ subplot(1,2,2)
 imshow(imadjust(image_fluor_sel),'InitialMagnification','fit')
 hold on
 % plot cell surrounding
-plot(this_cell.mesh(:,1)-topx,this_cell.mesh(:,2)-topy,'Color','cyan','MarkerSize',10);
-plot(this_cell.mesh(:,3)-topx,this_cell.mesh(:,4)-topy,'Color','cyan','MarkerSize',10);
+plot(this_cell.mesh(:,1)-topx+1,this_cell.mesh(:,2)-topy+1,'Color','cyan','MarkerSize',10);
+plot(this_cell.mesh(:,3)-topx+1,this_cell.mesh(:,4)-topy+1,'Color','cyan','MarkerSize',10);
 hold on
 % plot spots
 str = cell(1,size(spot_positions,1));
 p = zeros(1,size(spot_positions,1));
 for i = 1:size(spot_positions,1)
-    p(i) = plot(spot_positions(i,1)-topx,spot_positions(i,2)-topy,'x','Color',colors(i,:),'MarkerSize',10,'LineWidth',1.5);
+    p(i) = plot(spot_positions(i,1)-topx+1,spot_positions(i,2)-topy+1,'x','Color',colors(i,:),'MarkerSize',10,'LineWidth',1.5);
     %text(spot_positions(i,1)-topx+5,spot_positions(i,2)-topy,['Spot ID: ' num2str(i)],'Color','r','FontWeight','Bold','FontSize',14);
     str{i} = ['Spot ID: ' num2str(i) newline 'Spot area: ' num2str(spot_area(i)) newline 'Signal int: ' num2str(signal_int(i)) newline '-----'];
     % plot spot boundaries
     [row,col] = ind2sub(size(image_fluor),PixelIdxList{i});
     bin_tmp = logical(false(size(image_fluor_sel)));
     for j = 1:length(row)
-        bin_tmp(row(j)-topy,col(j)-topx) = true;
+        bin_tmp(row(j)-topy+1,col(j)-topx+1) = true;
     end
     B = bwboundaries(bin_tmp,'noholes');
     ps = plot(B{1}(:,2), B{1}(:,1),'Color',colors(i,:),'LineWidth', 1.5);
